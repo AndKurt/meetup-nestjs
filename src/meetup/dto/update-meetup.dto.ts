@@ -1,4 +1,4 @@
-export class UpdateMeetupDto {
-  readonly title: string
-  readonly description: string
-}
+import { PartialType } from '@nestjs/swagger'
+import { CreateMeetupDto } from './create-meetup.dto'
+
+export class UpdateMeetupDto extends PartialType(CreateMeetupDto) {}

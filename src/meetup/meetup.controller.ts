@@ -1,22 +1,56 @@
-import { Body, Controller, Delete, Get, Header, HttpCode, HttpStatus, Param, Post, Put } from '@nestjs/common'
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Header,
+  HttpCode,
+  HttpStatus,
+  NotFoundException,
+  Param,
+  Post,
+  Put,
+  Res,
+  UseFilters,
+} from '@nestjs/common'
+import { Response } from 'express'
+import { HttpExceptionFilter } from 'src/common/filters'
 
 import { CreateMeetupDto } from './dto/create-meetup.dto'
 import { UpdateMeetupDto } from './dto/update-meetup.dto'
 import { MeetupService } from './meetup.service'
 import { Meetup } from './schemas/meetup.schema'
 
+@UseFilters(new HttpExceptionFilter())
 @Controller('meetup')
 export class MeetupController {
   constructor(private meetupService: MeetupService) {}
 
   @Get()
-  getAll(): Promise<Meetup[]> {
-    return this.meetupService.getAll()
+  async getAll(@Res() res: Response) {
+    try {
+      const meetups = await this.meetupService.getAll()
+      if (!meetups.length) {
+        throw new NotFoundException('No meetups found')
+      }
+      return res.json(meetups)
+    } catch (error) {
+      throw new NotFoundException('Not found')
+    }
   }
 
   @Get(':id')
-  getById(@Param('id') id: string): Promise<Meetup> {
-    return this.meetupService.getById(id)
+  async getById(@Res() res: Response, @Param('id') id: string) {
+    try {
+      const meetup = await this.meetupService.getById(id)
+      if (!meetup) {
+        throw new NotFoundException('Meetup does not exist')
+      }
+      return res.json(meetup)
+    } catch (error) {
+      throw new BadRequestException("Meetup ID doesn't exist")
+    }
   }
 
   @Post()
@@ -27,12 +61,28 @@ export class MeetupController {
   }
 
   @Put(':id')
-  update(@Body() updateMeetupDto: UpdateMeetupDto, @Param('id') id: string) {
-    return this.meetupService.update(id, updateMeetupDto)
+  async update(@Res() res: Response, @Body() updateMeetupDto: UpdateMeetupDto, @Param('id') id: string) {
+    try {
+      const meetup = await this.meetupService.update(id, updateMeetupDto)
+      if (!meetup) {
+        throw new NotFoundException('Meetup does not exist')
+      }
+      return res.json(meetup)
+    } catch (err) {
+      throw new BadRequestException("Meetup hasn't been updated. Check meetup ID")
+    }
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.meetupService.remove(id)
+  async remove(@Res() res: Response, @Param('id') id: string) {
+    try {
+      const meetup = await this.meetupService.remove(id)
+      if (!meetup) {
+        throw new NotFoundException('Meetup does not exist')
+      }
+      return res.json(meetup)
+    } catch (error) {
+      throw new BadRequestException("Meetup ID doesn't exist")
+    }
   }
 }
