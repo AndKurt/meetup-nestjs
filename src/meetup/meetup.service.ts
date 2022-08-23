@@ -9,8 +9,12 @@ import { CreateMeetupDto, UpdateMeetupDto } from './dto'
 export class MeetupService {
   constructor(@InjectModel(Meetup.name) private meetupModel: Model<MeetupDocument>) {}
 
-  async getAll(): Promise<Meetup[]> {
-    return this.meetupModel.find().exec()
+  getAll(options) {
+    return this.meetupModel.find(options)
+  }
+
+  count(options) {
+    return this.meetupModel.count(options).exec()
   }
 
   async getById(id: string): Promise<Meetup> {
