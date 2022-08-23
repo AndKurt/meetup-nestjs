@@ -14,8 +14,6 @@ export class MeetupService {
   }
 
   async getById(id: string): Promise<Meetup> {
-    console.log(await this.meetupModel.findById(id))
-
     return this.meetupModel.findById(id)
   }
 
@@ -26,11 +24,13 @@ export class MeetupService {
 
   async remove(id: string): Promise<Meetup> {
     const meetup: Meetup = await this.meetupModel.findByIdAndRemove(id)
+    //const meetup: Meetup = await this.meetupModel.findByIdAndRemove(id, {new: true})
     return meetup
   }
 
   async update(id: string, meetupDto: UpdateMeetupDto): Promise<Meetup> {
-    const meetup = this.meetupModel.findByIdAndUpdate(id, meetupDto)
+    await this.meetupModel.findByIdAndUpdate(id, meetupDto)
+    const meetup = await this.meetupModel.findById(id)
     return meetup
   }
 }

@@ -12,17 +12,14 @@ import {
   Post,
   Put,
   Res,
-  UseFilters,
 } from '@nestjs/common'
 import { Response } from 'express'
-import { HttpExceptionFilter } from 'src/common/filters'
 
 import { CreateMeetupDto } from './dto/create-meetup.dto'
 import { UpdateMeetupDto } from './dto/update-meetup.dto'
 import { MeetupService } from './meetup.service'
 import { Meetup } from './schemas/meetup.schema'
 
-@UseFilters(new HttpExceptionFilter())
 @Controller('meetup')
 export class MeetupController {
   constructor(private meetupService: MeetupService) {}

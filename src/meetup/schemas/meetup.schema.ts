@@ -10,6 +10,15 @@ export class Meetup {
 
   @Prop()
   description: string
+
+  @Prop()
+  tags: string[]
+
+  @Prop()
+  place: string
+
+  @Prop()
+  date: Date
 }
 
 export const MeetupSchema = SchemaFactory.createForClass(Meetup)
