@@ -11,10 +11,12 @@ import {
   Param,
   Post,
   Put,
+  Query,
   Req,
   Res,
 } from '@nestjs/common'
-import { Response, Request } from 'express'
+import { Response } from 'express'
+import { QueryParamsMeetup } from './dto'
 
 import { CreateMeetupDto } from './dto/create-meetup.dto'
 import { UpdateMeetupDto } from './dto/update-meetup.dto'
@@ -25,73 +27,53 @@ import { Meetup } from './schemas/meetup.schema'
 export class MeetupController {
   constructor(private readonly meetupService: MeetupService) {}
 
-  //@Get()
-  //async getAll(@Res() res: Response) {
-  //  try {
-  //    const meetups = await this.meetupService.getAll({}).exec()
-  //    if (!meetups.length) {
-  //      throw new NotFoundException('No meetups found')
-  //    }
-  //    return res.json(meetups)
-  //  } catch (error) {
-  //    throw new NotFoundException('Not found')
-  //  }
-  //}
-
   @Get()
-  async getMeetups(@Req() req: Request, @Res() res: Response) {
+  async getMeetups(@Res() res: Response, @Query() queryParams: QueryParamsMeetup) {
     let options = {}
 
-    if (req.query.tag) {
+    if (queryParams.tag) {
       options = {
-        $or: [
-          { tags: new RegExp(req.query.tag.toString(), 'i') },
-          //{ description: new RegExp(req.query.s.toString(), 'i') },
-        ],
+        $or: [{ tags: new RegExp(queryParams.tag.toString(), 'i') }],
       }
     }
 
     try {
       const meetups = await this.meetupService.getAll(options).exec()
       const countOfMeetups = meetups.length
+
       if (!countOfMeetups) {
         throw new NotFoundException('No meetups found')
-        //}
       }
 
-      const page: number = parseInt(req.query.page as any) || 1
-      const countPerPage = parseInt(req.query.countPerPage as any) || countOfMeetups
+      const page: number = parseInt(queryParams.page as any) || 1
+      const countPerPage = parseInt(queryParams.countPerPage as any) || countOfMeetups
       const total = await this.meetupService.count(options)
 
-      const result = await this.meetupService
-        .getAll(options)
+      const query = this.meetupService.getAll(options)
+
+      if (queryParams.sort) {
+        if (queryParams.sort === 'asc' || queryParams.sort === 'desc') {
+          query.sort({
+            date: queryParams.sort,
+          })
+        } else {
+          throw new BadRequestException('Check the querry value for sort')
+        }
+      }
+
+      const result = await query
         .skip((page - 1) * countPerPage)
         .limit(countPerPage)
         .exec()
 
       return res.json({ result, total, countPerPage, page, lastPage: Math.ceil(total / countPerPage) })
     } catch (error) {
-      throw new NotFoundException('Not found')
+      if (error.response.statusCode === 400) {
+        throw new BadRequestException(error.message)
+      } else {
+        throw new NotFoundException(error.message)
+      }
     }
-
-    const query = await this.meetupService.getAll(options).exec()
-
-    //if (req.query.sort) {
-    //query.sort({
-    //date: req.query.sort,
-    //})
-    //}
-
-    //const page: number = parseInt(req.query.page as any) || 1
-    //const limit = 9
-    //const total = await this.meetupService.count(options)
-
-    //const data = await query
-    //  .skip((page - 1) * limit)
-    //  .limit(limit)
-    //  .exec()
-
-    console.log(query)
   }
 
   @Get(':id')
@@ -132,11 +114,11 @@ export class MeetupController {
     try {
       const meetup = await this.meetupService.remove(id)
       if (!meetup) {
-        throw new NotFoundException('Meetup does not exist')
+        throw new BadRequestException('Meetup does not exist')
       }
       return res.json(meetup)
     } catch (error) {
-      throw new BadRequestException("Meetup ID doesn't exist")
+      throw new NotFoundException("Meetup ID doesn't exist")
     }
   }
 }

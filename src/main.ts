@@ -18,7 +18,6 @@ async function bootstrap() {
             errorMessages[error.property] = Object.values(error.constraints).join('. ').trim()
           }
         })
-        console.log(errorMessages)
         return new BadRequestException(errorMessages)
       },
     }),
