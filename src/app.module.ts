@@ -1,16 +1,23 @@
 import { Module } from '@nestjs/common'
-import { ConfigModule, ConfigService } from '@nestjs/config'
-import { APP_FILTER } from '@nestjs/core'
+import { ConfigModule } from '@nestjs/config'
 import { MongooseModule } from '@nestjs/mongoose'
 
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
-import { HttpExceptionFilter } from './common/filters'
 import { MeetupModule } from './meetup/meetup.module'
+import { AuthModule } from './auth/auth.module'
+import { UsersService } from './users/users.service'
+import { UsersModule } from './users/users.module'
 
 @Module({
-  imports: [ConfigModule.forRoot(), MeetupModule, MongooseModule.forRoot(process.env.MONGODB_URI)],
+  imports: [
+    ConfigModule.forRoot(),
+    MeetupModule,
+    MongooseModule.forRoot(process.env.MONGODB_URI),
+    UsersModule,
+    AuthModule,
+  ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, UsersService],
 })
 export class AppModule {}

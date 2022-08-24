@@ -3,6 +3,10 @@ import { IsNumberString, IsOptional, IsString } from 'class-validator'
 export class QueryParamsMeetup {
   @IsString()
   @IsOptional()
+  readonly title: string
+
+  @IsString()
+  @IsOptional()
   readonly tag: string
 
   @IsNumberString()

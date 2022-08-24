@@ -14,12 +14,12 @@ import {
   Query,
   Req,
   Res,
+  UseGuards,
 } from '@nestjs/common'
 import { Response } from 'express'
-import { QueryParamsMeetup } from './dto'
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard'
 
-import { CreateMeetupDto } from './dto/create-meetup.dto'
-import { UpdateMeetupDto } from './dto/update-meetup.dto'
+import { CreateMeetupDto, QueryParamsMeetup, UpdateMeetupDto } from './dto'
 import { MeetupService } from './meetup.service'
 import { Meetup } from './schemas/meetup.schema'
 
@@ -31,49 +31,46 @@ export class MeetupController {
   async getMeetups(@Res() res: Response, @Query() queryParams: QueryParamsMeetup) {
     let options = {}
 
+    if (queryParams.title) {
+      options = {
+        $or: [{ title: new RegExp(queryParams.title.toString(), 'i') }],
+      }
+    }
     if (queryParams.tag) {
       options = {
         $or: [{ tags: new RegExp(queryParams.tag.toString(), 'i') }],
       }
     }
 
-    try {
-      const meetups = await this.meetupService.getAll(options).exec()
-      const countOfMeetups = meetups.length
+    const meetups = await this.meetupService.getAll(options).exec()
+    const countOfMeetups = meetups.length
 
-      if (!countOfMeetups) {
-        throw new NotFoundException('No meetups found')
-      }
+    if (!countOfMeetups && Object.keys(options).length) {
+      throw new BadRequestException('No meetups found. Check query parameters')
+    }
 
-      const page: number = parseInt(queryParams.page as any) || 1
-      const countPerPage = parseInt(queryParams.countPerPage as any) || countOfMeetups
-      const total = await this.meetupService.count(options)
+    const page: number = parseInt(queryParams.page as any) || 1
+    const countPerPage = parseInt(queryParams.countPerPage as any) || countOfMeetups
+    const total = await this.meetupService.count(options)
 
-      const query = this.meetupService.getAll(options)
+    const query = this.meetupService.getAll(options)
 
-      if (queryParams.sort) {
-        if (queryParams.sort === 'asc' || queryParams.sort === 'desc') {
-          query.sort({
-            date: queryParams.sort,
-          })
-        } else {
-          throw new BadRequestException('Check the querry value for sort')
-        }
-      }
-
-      const result = await query
-        .skip((page - 1) * countPerPage)
-        .limit(countPerPage)
-        .exec()
-
-      return res.json({ result, total, countPerPage, page, lastPage: Math.ceil(total / countPerPage) })
-    } catch (error) {
-      if (error.response.statusCode === 400) {
-        throw new BadRequestException(error.message)
+    if (queryParams.sort) {
+      if (queryParams.sort === 'asc' || queryParams.sort === 'desc') {
+        query.sort({
+          date: queryParams.sort,
+        })
       } else {
-        throw new NotFoundException(error.message)
+        throw new BadRequestException('Check the querry value for sort')
       }
     }
+
+    const result = await query
+      .skip((page - 1) * countPerPage)
+      .limit(countPerPage)
+      .exec()
+
+    return res.json({ result, total, countPerPage, page, lastPage: Math.ceil(total / countPerPage) })
   }
 
   @Get(':id')
@@ -81,7 +78,7 @@ export class MeetupController {
     try {
       const meetup = await this.meetupService.getById(id)
       if (!meetup) {
-        throw new NotFoundException('Meetup does not exist')
+        throw new BadRequestException('Meetup does not exist')
       }
       return res.json(meetup)
     } catch (error) {
@@ -89,6 +86,7 @@ export class MeetupController {
     }
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @Header('Cashe-control', 'none')
@@ -96,6 +94,7 @@ export class MeetupController {
     return this.meetupService.create(createMeetupDto)
   }
 
+  @UseGuards(JwtAuthGuard)
   @Put(':id')
   async update(@Res() res: Response, @Body() updateMeetupDto: UpdateMeetupDto, @Param('id') id: string) {
     try {
@@ -109,6 +108,7 @@ export class MeetupController {
     }
   }
 
+  @UseGuards(JwtAuthGuard)
   @Delete(':id')
   async remove(@Res() res: Response, @Param('id') id: string) {
     try {
