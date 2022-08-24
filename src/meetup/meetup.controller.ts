@@ -17,7 +17,7 @@ import {
   UseGuards,
 } from '@nestjs/common'
 import { Response } from 'express'
-import { JwtAuthGuard } from 'src/auth/jwt-auth.guard'
+import { JwtAuthGuard } from 'src/auth/guards'
 
 import { CreateMeetupDto, QueryParamsMeetup, UpdateMeetupDto } from './dto'
 import { MeetupService } from './meetup.service'

@@ -6,18 +6,17 @@ import { AppController } from './app.controller'
 import { AppService } from './app.service'
 import { MeetupModule } from './meetup/meetup.module'
 import { AuthModule } from './auth/auth.module'
-import { UsersService } from './users/users.service'
-import { UsersModule } from './users/users.module'
+import { UserModule } from './users/users.module'
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
-    MeetupModule,
     MongooseModule.forRoot(process.env.MONGODB_URI),
-    UsersModule,
+    MeetupModule,
+    UserModule,
     AuthModule,
   ],
   controllers: [AppController],
-  providers: [AppService, UsersService],
+  providers: [AppService],
 })
 export class AppModule {}
