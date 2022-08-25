@@ -25,7 +25,7 @@ export class AuthService {
       ...createUserDto,
       password: hash,
     })
-    const tokens = await this.getTokens(newUser._id, newUser.name)
+    const tokens = await this.getTokens(newUser._id, newUser.name, newUser.role)
     await this.updateRefreshToken(newUser.id, tokens.refreshToken)
     return tokens
   }
@@ -37,7 +37,7 @@ export class AuthService {
     const isPasswordMatch = await this.isValidData(user.password, data.password)
     if (!isPasswordMatch) throw new BadRequestException('Password is incorrect')
 
-    const tokens = await this.getTokens(user._id, user.name)
+    const tokens = await this.getTokens(user._id, user.name, user.role)
     await this.updateRefreshToken(user._id, tokens.refreshToken)
     return tokens
   }
@@ -53,12 +53,13 @@ export class AuthService {
     })
   }
 
-  async getTokens(userId: string, username: string) {
+  async getTokens(userId: string, username: string, role: string) {
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(
         {
           sub: userId,
           username,
+          role,
         },
         {
           secret: process.env.ACCESS_TOKEN_SECRET,
@@ -69,6 +70,7 @@ export class AuthService {
         {
           sub: userId,
           username,
+          role,
         },
         {
           secret: process.env.REFRESH_TOKEN_SECRET,
@@ -90,7 +92,7 @@ export class AuthService {
     const refreshTokenMatches = await this.isValidData(user.refreshToken, refreshToken)
     if (!refreshTokenMatches) throw new ForbiddenException('Access denied')
 
-    const tokens = await this.getTokens(user.id, user.name)
+    const tokens = await this.getTokens(user.id, user.name, user.role)
     await this.updateRefreshToken(user.id, tokens.refreshToken)
     return tokens
   }

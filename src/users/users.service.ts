@@ -39,8 +39,8 @@ export class UserService {
     return user
   }
 
-  async create(data: ICreateUser): Promise<UserDocument> {
-    const { email, name, password } = data
+  async create(data: CreateUserDto): Promise<UserDocument> {
+    const { email, name, password, role } = data
 
     const userWithSameName = await this.findByName(name)
     const userWithSameEmail = await this.findByEmail(email)
@@ -52,7 +52,7 @@ export class UserService {
       throw new ConflictException(`Account with email: ${userWithSameEmail.email} already exists!`)
     }
 
-    const newUser = new this.userModel({ name, email, password })
+    const newUser = new this.userModel({ name, email, password, role })
     return newUser.save()
   }
 
@@ -67,5 +67,10 @@ export class UserService {
 
   async update(id: string, updateUserDto: UpdateUserDto): Promise<UserDocument> {
     return this.userModel.findByIdAndUpdate(id, updateUserDto, { new: true }).exec()
+  }
+
+  async removeAll() {
+    // Delete all users except users with role admin
+    return this.userModel.deleteMany({ role: { $ne: 'admin' } })
   }
 }

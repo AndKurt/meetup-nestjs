@@ -37,4 +37,8 @@ export class MeetupService {
     const meetup = await this.meetupModel.findById(id)
     return meetup
   }
+
+  async removeAll(): Promise<any> {
+    return this.meetupModel.deleteMany()
+  }
 }

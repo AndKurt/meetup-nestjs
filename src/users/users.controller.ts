@@ -11,7 +11,9 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common'
-import { AccessTokenGuard } from 'src/auth/guards'
+import { Roles } from 'src/auth/decorator/roles.decorator'
+import { AccessTokenGuard, RolesGuard } from 'src/auth/guards'
+import { Role } from 'src/auth/models/role.enum'
 
 import { CreateUserDto, UpdateUserDto } from './dto'
 import { IUserDetails } from './interface/user-details.interface'
@@ -22,7 +24,6 @@ export class UserController {
   constructor(private userService: UserService) {}
 
   @Get()
-  @UseGuards(AccessTokenGuard)
   getAllUsers() {
     return this.userService.getAllUsers()
   }
@@ -32,16 +33,26 @@ export class UserController {
     return this.userService.findById(id)
   }
 
+  @Roles(Role.ADMIN, Role.USER)
   @Patch(':id')
-  @UseGuards(AccessTokenGuard)
+  @UseGuards(AccessTokenGuard, RolesGuard)
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.userService.update(id, updateUserDto)
   }
 
+  @Roles(Role.ADMIN)
   @Delete(':id')
-  @UseGuards(AccessTokenGuard)
+  @UseGuards(AccessTokenGuard, RolesGuard)
   async remove(@Param('id') id: string) {
     const user = await this.userService.remove(id)
+    return user
+  }
+
+  @Roles(Role.ADMIN)
+  @Delete()
+  @UseGuards(AccessTokenGuard)
+  async removeAll() {
+    const user = await this.userService.removeAll()
     return user
   }
 }

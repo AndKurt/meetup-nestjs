@@ -17,7 +17,9 @@ import {
   UseGuards,
 } from '@nestjs/common'
 import { Response } from 'express'
-import { AccessTokenGuard } from 'src/auth/guards'
+import { Roles } from 'src/auth/decorator/roles.decorator'
+import { AccessTokenGuard, RolesGuard } from 'src/auth/guards'
+import { Role } from 'src/auth/models/role.enum'
 
 import { CreateMeetupDto, QueryParamsMeetup, UpdateMeetupDto } from './dto'
 import { MeetupService } from './meetup.service'
@@ -94,7 +96,8 @@ export class MeetupController {
     return this.meetupService.create(createMeetupDto)
   }
 
-  @UseGuards(AccessTokenGuard)
+  @Roles(Role.ADMIN, Role.USER)
+  @UseGuards(AccessTokenGuard, RolesGuard)
   @Put(':id')
   async update(@Res() res: Response, @Body() updateMeetupDto: UpdateMeetupDto, @Param('id') id: string) {
     try {
@@ -108,7 +111,8 @@ export class MeetupController {
     }
   }
 
-  @UseGuards(AccessTokenGuard)
+  @Roles(Role.ADMIN)
+  @UseGuards(AccessTokenGuard, RolesGuard)
   @Delete(':id')
   async remove(@Res() res: Response, @Param('id') id: string) {
     try {
@@ -120,5 +124,12 @@ export class MeetupController {
     } catch (error) {
       throw new NotFoundException("Meetup ID doesn't exist")
     }
+  }
+
+  @Roles(Role.ADMIN)
+  @UseGuards(AccessTokenGuard, RolesGuard)
+  @Delete()
+  async removeAll() {
+    return this.meetupService.removeAll()
   }
 }

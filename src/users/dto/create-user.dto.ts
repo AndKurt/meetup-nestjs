@@ -1,4 +1,5 @@
 import { IsEmail, IsNotEmpty, IsOptional, MaxLength, MinLength } from 'class-validator'
+import { Role } from 'src/auth/models/role.enum'
 
 export class CreateUserDto {
   @IsNotEmpty()
@@ -17,4 +18,7 @@ export class CreateUserDto {
 
   @IsOptional()
   readonly refreshToken?: string
+
+  @IsNotEmpty()
+  readonly role: Role = Role.USER
 }
