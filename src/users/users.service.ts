@@ -4,6 +4,7 @@ import { InjectModel } from '@nestjs/mongoose'
 import * as bcrypt from 'bcrypt'
 
 import { Model } from 'mongoose'
+import { CreateUserDto, UpdateUserDto } from './dto'
 import { ICreateUser, IUserDetails } from './interface/user-details.interface'
 
 import { User, UserDocument } from './schemas/users.schema'
@@ -16,18 +17,10 @@ export class UserService {
     return bcrypt.hash(password, 10)
   }
 
-  getUserDetails(user: UserDocument): IUserDetails {
-    return {
-      id: user._id,
-      name: user.name,
-      email: user.email,
-    }
-  }
-
-  async getAllUsers(): Promise<IUserDetails[] | null> {
+  async getAllUsers(): Promise<UserDocument[] | []> {
     const users = await this.userModel.find()
     if (!users.length) return []
-    return users.map((user) => this.getUserDetails(user))
+    return users
   }
 
   async findByEmail(email: string): Promise<UserDocument | null> {
@@ -38,15 +31,15 @@ export class UserService {
     return this.userModel.findOne({ name }).exec()
   }
 
-  async findById(id: string): Promise<IUserDetails | null> {
+  async findById(id: string): Promise<UserDocument> {
     const user = await this.userModel.findById(id).exec()
     if (!user) {
       throw new ConflictException(`Account with ID: ${id} doesn't exist!`)
     }
-    return this.getUserDetails(user)
+    return user
   }
 
-  async create(data: ICreateUser): Promise<IUserDetails> {
+  async create(data: ICreateUser): Promise<UserDocument> {
     const { email, name, password } = data
 
     const userWithSameName = await this.findByName(name)
@@ -59,19 +52,20 @@ export class UserService {
       throw new ConflictException(`Account with email: ${userWithSameEmail.email} already exists!`)
     }
 
-    const hashedPassword = await this.hashPassword(password)
-
-    const newUser = new this.userModel({ name, email, password: hashedPassword })
-    newUser.save()
-    return this.getUserDetails(newUser)
+    const newUser = new this.userModel({ name, email, password })
+    return newUser.save()
   }
 
-  async remove(id: string): Promise<IUserDetails> {
+  async remove(id: string): Promise<UserDocument> {
     const user = await this.findById(id)
     if (!user) {
       throw new ConflictException(`Account with ID: ${id} doesn't exist!`)
     }
     await this.userModel.findByIdAndDelete(id)
     return user
+  }
+
+  async update(id: string, updateUserDto: UpdateUserDto): Promise<UserDocument> {
+    return this.userModel.findByIdAndUpdate(id, updateUserDto, { new: true }).exec()
   }
 }

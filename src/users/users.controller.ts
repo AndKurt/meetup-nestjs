@@ -1,7 +1,19 @@
-import { Body, Controller, Delete, Get, Header, HttpCode, HttpStatus, Param, Post, UseGuards } from '@nestjs/common'
-import { JwtAuthGuard } from 'src/auth/guards'
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Header,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common'
+import { AccessTokenGuard } from 'src/auth/guards'
 
-import { CreateUserDto } from './dto'
+import { CreateUserDto, UpdateUserDto } from './dto'
 import { IUserDetails } from './interface/user-details.interface'
 import { UserService } from './users.service'
 
@@ -10,26 +22,25 @@ export class UserController {
   constructor(private userService: UserService) {}
 
   @Get()
-  getAllUsers(): Promise<IUserDetails[]> {
+  @UseGuards(AccessTokenGuard)
+  getAllUsers() {
     return this.userService.getAllUsers()
   }
 
   @Get(':id')
-  getUser(@Param('id') id: string): Promise<IUserDetails | null> {
+  getUser(@Param('id') id: string) {
     return this.userService.findById(id)
   }
 
-  @Post('register')
-  @HttpCode(HttpStatus.CREATED)
-  @Header('Cashe-control', 'none')
-  async create(@Body() createUserDto: CreateUserDto): Promise<IUserDetails | null> {
-    const user = await this.userService.create(createUserDto)
-    return user
+  @Patch(':id')
+  @UseGuards(AccessTokenGuard)
+  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+    return this.userService.update(id, updateUserDto)
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard)
-  async remove(@Param('id') id: string): Promise<IUserDetails | string> {
+  @UseGuards(AccessTokenGuard)
+  async remove(@Param('id') id: string) {
     const user = await this.userService.remove(id)
     return user
   }

@@ -17,7 +17,7 @@ import {
   UseGuards,
 } from '@nestjs/common'
 import { Response } from 'express'
-import { JwtAuthGuard } from 'src/auth/guards'
+import { AccessTokenGuard } from 'src/auth/guards'
 
 import { CreateMeetupDto, QueryParamsMeetup, UpdateMeetupDto } from './dto'
 import { MeetupService } from './meetup.service'
@@ -86,7 +86,7 @@ export class MeetupController {
     }
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(AccessTokenGuard)
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @Header('Cashe-control', 'none')
@@ -94,7 +94,7 @@ export class MeetupController {
     return this.meetupService.create(createMeetupDto)
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(AccessTokenGuard)
   @Put(':id')
   async update(@Res() res: Response, @Body() updateMeetupDto: UpdateMeetupDto, @Param('id') id: string) {
     try {
@@ -108,7 +108,7 @@ export class MeetupController {
     }
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(AccessTokenGuard)
   @Delete(':id')
   async remove(@Res() res: Response, @Param('id') id: string) {
     try {

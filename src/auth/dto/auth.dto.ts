@@ -1,4 +1,4 @@
-export class ExistingUserDTO {
+export class AuthDto {
   name: string
   password: string
 }
