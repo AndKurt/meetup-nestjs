@@ -24,4 +24,8 @@ export class CreateMeetupDto {
   @IsDateString()
   @IsNotEmpty()
   readonly date: Date
+
+  @IsString()
+  @IsOptional()
+  readonly ownerId: string
 }

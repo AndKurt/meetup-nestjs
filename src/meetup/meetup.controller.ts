@@ -16,7 +16,7 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common'
-import { Response } from 'express'
+import { Request, Response } from 'express'
 import { Roles } from 'src/auth/decorator/roles.decorator'
 import { AccessTokenGuard, RolesGuard } from 'src/auth/guards'
 import { Role } from 'src/auth/models/role.enum'
@@ -92,8 +92,10 @@ export class MeetupController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @Header('Cashe-control', 'none')
-  create(@Body() createMeetupDto: CreateMeetupDto): Promise<Meetup> {
-    return this.meetupService.create(createMeetupDto)
+  create(@Body() createMeetupDto: Omit<CreateMeetupDto, 'omwerId'>, @Req() req: Request): Promise<Meetup> {
+    console.log(this.meetupService.create({ ...createMeetupDto, ownerId: req.user['sub'] }))
+
+    return this.meetupService.create({ ...createMeetupDto, ownerId: req.user['sub'] })
   }
 
   @Roles(Role.ADMIN, Role.USER)

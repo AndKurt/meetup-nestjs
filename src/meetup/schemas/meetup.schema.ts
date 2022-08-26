@@ -19,6 +19,9 @@ export class Meetup {
 
   @Prop()
   date: Date
+
+  @Prop()
+  ownerId: string
 }
 
 export const MeetupSchema = SchemaFactory.createForClass(Meetup)

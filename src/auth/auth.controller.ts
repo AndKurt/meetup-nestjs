@@ -12,8 +12,10 @@ export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Post('register')
-  signup(@Body() createUserDto: CreateUserDto) {
-    return this.authService.register(createUserDto)
+  async signup(@Body() createUserDto: CreateUserDto, @Res({ passthrough: true }) res: Response) {
+    const tokens = await this.authService.register(createUserDto)
+    res.cookie('auth-cookie', tokens, { httpOnly: true })
+    return { accessToken: tokens.accessToken, msg: 'User created succesfull' }
   }
 
   @Post('login')
@@ -21,7 +23,7 @@ export class AuthController {
   async login(@Body() user: AuthDto, @Res({ passthrough: true }) res: Response) {
     const tokens = await this.authService.login(user)
     res.cookie('auth-cookie', tokens, { httpOnly: true })
-    return tokens
+    return { accessToken: tokens.accessToken, msg: 'Login succesfull' }
   }
 
   @UseGuards(AccessTokenGuard)
@@ -30,6 +32,7 @@ export class AuthController {
     const accessToken = req.cookies['auth-cookie'].accessToken
     const userId = getIdFromAccessToken(accessToken)
     this.authService.logout(userId)
+    return { msg: 'Logout succesfull' }
   }
 
   @UseGuards(RefreshTokenGuard)
@@ -37,9 +40,8 @@ export class AuthController {
   async refreshTokens(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const refreshToken = req.cookies['auth-cookie'].refreshToken
     const userId = getIdFromAccessToken(refreshToken)
-
     const tokens = await this.authService.refreshTokens(userId, refreshToken)
     res.cookie('auth-cookie', tokens, { httpOnly: true })
-    return tokens
+    return { accessToken: tokens.accessToken, msg: 'Refresh tokens succesfull' }
   }
 }
