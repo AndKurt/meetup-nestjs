@@ -1,4 +1,4 @@
-import { ConflictException, Injectable } from '@nestjs/common'
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 
 import * as bcrypt from 'bcrypt'
@@ -31,11 +31,15 @@ export class UserService {
   }
 
   async findById(id: string): Promise<UserDocument> {
-    const user = await this.userModel.findById(id).exec()
-    if (!user) {
-      throw new ConflictException(`Account with ID: ${id} doesn't exist!`)
+    try {
+      if (id.match(/^[0-9a-fA-F]{24}$/)) {
+        return this.userModel.findById(id)
+      } else {
+        throw new BadRequestException()
+      }
+    } catch (error) {
+      throw new NotFoundException()
     }
-    return user
   }
 
   async findByIdForValidateToken(id: string): Promise<UserDocument> {

@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   Header,
   HttpCode,
@@ -17,9 +18,8 @@ import {
   UseGuards,
 } from '@nestjs/common'
 import { Request, Response } from 'express'
-import { Roles } from 'src/auth/decorator/roles.decorator'
+import { Action, CaslAbilityFactory } from 'src/ability/ability.factory'
 import { AccessTokenGuard, RolesGuard } from 'src/auth/guards'
-import { Role } from 'src/auth/models/role.enum'
 
 import { CreateMeetupDto, QueryParamsMeetup, UpdateMeetupDto } from './dto'
 import { MeetupService } from './meetup.service'
@@ -27,7 +27,7 @@ import { Meetup } from './schemas/meetup.schema'
 
 @Controller('meetup')
 export class MeetupController {
-  constructor(private readonly meetupService: MeetupService) {}
+  constructor(private readonly meetupService: MeetupService, private readonly caslAbilityFactory: CaslAbilityFactory) {}
 
   @Get()
   async getMeetups(@Res() res: Response, @Query() queryParams: QueryParamsMeetup) {
@@ -93,45 +93,59 @@ export class MeetupController {
   @HttpCode(HttpStatus.CREATED)
   @Header('Cashe-control', 'none')
   create(@Body() createMeetupDto: Omit<CreateMeetupDto, 'omwerId'>, @Req() req: Request): Promise<Meetup> {
-    console.log(this.meetupService.create({ ...createMeetupDto, ownerId: req.user['sub'] }))
-
     return this.meetupService.create({ ...createMeetupDto, ownerId: req.user['sub'] })
   }
 
-  @Roles(Role.ADMIN, Role.USER)
-  @UseGuards(AccessTokenGuard, RolesGuard)
+  @UseGuards(AccessTokenGuard)
   @Put(':id')
-  async update(@Res() res: Response, @Body() updateMeetupDto: UpdateMeetupDto, @Param('id') id: string) {
-    try {
-      const meetup = await this.meetupService.update(id, updateMeetupDto)
-      if (!meetup) {
-        throw new NotFoundException('Meetup does not exist')
-      }
-      return res.json(meetup)
-    } catch (err) {
-      throw new BadRequestException("Meetup hasn't been updated. Check meetup ID")
+  async update(@Req() req: Request, @Body() updateMeetupDto: UpdateMeetupDto, @Param('id') id: string) {
+    const activeUser = req.user
+    const ability = this.caslAbilityFactory.createForUser(activeUser)
+    const meetupForUpdate = await this.meetupService.getById(id)
+    const canUpdate = ability.can(Action.Update, meetupForUpdate)
+
+    if (!meetupForUpdate) {
+      throw new NotFoundException('Meetup does not exist')
     }
+    if (!canUpdate) {
+      throw new ForbiddenException('You can"t update, because you are not an admin')
+    }
+
+    const meetup = await this.meetupService.update(id, updateMeetupDto)
+    return meetup
   }
 
-  @Roles(Role.ADMIN)
-  @UseGuards(AccessTokenGuard, RolesGuard)
+  @UseGuards(AccessTokenGuard)
   @Delete(':id')
-  async remove(@Res() res: Response, @Param('id') id: string) {
-    try {
-      const meetup = await this.meetupService.remove(id)
-      if (!meetup) {
-        throw new BadRequestException('Meetup does not exist')
-      }
-      return res.json(meetup)
-    } catch (error) {
-      throw new NotFoundException("Meetup ID doesn't exist")
+  async remove(@Param('id') id: string, @Req() req: Request) {
+    const activeUser = req.user
+    const ability = this.caslAbilityFactory.createForUser(activeUser)
+    const meetupForDelete = await this.meetupService.getById(id)
+    const canDelete = ability.can(Action.Delete, meetupForDelete)
+
+    if (!meetupForDelete) {
+      throw new BadRequestException('Meetup does not exist')
     }
+    if (!canDelete) {
+      throw new ForbiddenException('You can"t delete, because you are not an admin')
+    }
+
+    await this.meetupService.remove(id)
+    return { msg: `Meetup deleted` }
   }
 
-  @Roles(Role.ADMIN)
-  @UseGuards(AccessTokenGuard, RolesGuard)
+  @UseGuards(AccessTokenGuard)
   @Delete()
-  async removeAll() {
-    return this.meetupService.removeAll()
+  async removeAll(@Req() req: Request) {
+    const activeUser = req.user
+    const ability = this.caslAbilityFactory.createForUser(activeUser)
+    const canDelete = ability.can(Action.Delete, 'all')
+
+    if (!canDelete) {
+      throw new ForbiddenException('You can"t delete, because you are not an admin')
+    }
+
+    await this.meetupService.removeAll()
+    return { msg: `All meetups deleted` }
   }
 }

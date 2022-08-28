@@ -7,6 +7,7 @@ import { AppService } from './app.service'
 import { MeetupModule } from './meetup/meetup.module'
 import { AuthModule } from './auth/auth.module'
 import { UserModule } from './users/users.module'
+import { CaslModule } from './ability/ability.module'
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { UserModule } from './users/users.module'
     MeetupModule,
     UserModule,
     AuthModule,
+    CaslModule,
   ],
   controllers: [AppController],
   providers: [AppService],

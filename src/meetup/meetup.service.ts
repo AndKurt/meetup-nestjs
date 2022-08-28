@@ -1,5 +1,5 @@
 import { Model } from 'mongoose'
-import { Injectable } from '@nestjs/common'
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 
 import { Meetup, MeetupDocument } from './schemas/meetup.schema'
@@ -17,8 +17,16 @@ export class MeetupService {
     return this.meetupModel.count(options).exec()
   }
 
-  async getById(id: string): Promise<Meetup> {
-    return this.meetupModel.findById(id)
+  async getById(id: string): Promise<MeetupDocument> {
+    try {
+      if (id.match(/^[0-9a-fA-F]{24}$/)) {
+        return this.meetupModel.findById(id)
+      } else {
+        throw new BadRequestException()
+      }
+    } catch (error) {
+      throw new NotFoundException()
+    }
   }
 
   async create(meetupDto: CreateMeetupDto): Promise<Meetup> {
@@ -26,10 +34,17 @@ export class MeetupService {
     return newMeetup.save()
   }
 
-  async remove(id: string): Promise<Meetup> {
-    const meetup: Meetup = await this.meetupModel.findByIdAndRemove(id)
-    //const meetup: Meetup = await this.meetupModel.findByIdAndRemove(id, {new: true})
-    return meetup
+  async remove(id: string): Promise<MeetupDocument> {
+    try {
+      if (id.match(/^[0-9a-fA-F]{24}$/)) {
+        const meetup = this.meetupModel.findByIdAndRemove(id)
+        return meetup
+      } else {
+        throw new BadRequestException()
+      }
+    } catch (error) {
+      throw new NotFoundException()
+    }
   }
 
   async update(id: string, meetupDto: UpdateMeetupDto): Promise<Meetup> {
