@@ -13,7 +13,7 @@ import {
 import { Request } from 'express'
 import { Action, CaslAbilityFactory } from 'src/ability/ability.factory'
 
-import { AccessTokenGuard, RolesGuard } from 'src/auth/guards'
+import { AccessTokenGuard } from 'src/auth/guards'
 import { UpdateUserDto } from './dto'
 import { IUserDetails } from './interface/user-details.interface'
 import { UserService } from './users.service'
@@ -56,6 +56,8 @@ export class UserController {
 
   @Delete(':id')
   @UseGuards(AccessTokenGuard)
+  //@UseGuards(AccessTokenGuard, PoliciesGuard)
+  //@CheckPolicies({ action: Action.Delete, subject: User })
   async remove(@Param('id') id: string, @Req() req: Request) {
     const activeUser = req.user
     const ability = this.caslAbilityFactory.createForUser(activeUser)
