@@ -1,5 +1,4 @@
 import { Ability, AbilityBuilder, AbilityClass, ExtractSubjectType, InferSubjects } from '@casl/ability'
-import { Model } from 'sequelize-typescript'
 import { Injectable } from '@nestjs/common'
 import { User } from 'src/users/schemas/users.schema-postgresql'
 import { InjectModel } from '@nestjs/sequelize'
