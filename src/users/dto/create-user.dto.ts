@@ -17,7 +17,7 @@ export class CreateUserDto {
   readonly password: string
 
   @IsOptional()
-  readonly refreshToken?: string
+  readonly refreshToken?: string | null
 
   @IsNotEmpty()
   readonly role: Role = Role.USER

@@ -27,5 +27,5 @@ export class CreateMeetupDto {
 
   @IsString()
   @IsOptional()
-  readonly ownerId: string
+  readonly ownerId: number
 }

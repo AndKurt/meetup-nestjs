@@ -5,7 +5,6 @@ import { CreateUserDto } from 'src/users/dto'
 import { AuthService } from './auth.service'
 import { AuthDto } from './dto/auth.dto'
 import { AccessTokenGuard, RefreshTokenGuard } from './guards'
-import { getIdFromAccessToken } from './utils/decodeJwt'
 
 @Controller('auth')
 export class AuthController {
@@ -13,7 +12,7 @@ export class AuthController {
 
   @Post('register')
   async signup(@Body() createUserDto: CreateUserDto, @Res({ passthrough: true }) res: Response) {
-    const tokens = await this.authService.register(createUserDto)
+    const tokens = await this.authService.register({ refreshToken: null, ...createUserDto })
     res.cookie('auth-cookie', tokens, { httpOnly: true })
     return { accessToken: tokens.accessToken, msg: 'User created succesfull' }
   }
@@ -29,8 +28,7 @@ export class AuthController {
   @UseGuards(AccessTokenGuard)
   @Get('logout')
   logout(@Req() req: Request) {
-    const accessToken = req.cookies['auth-cookie'].accessToken
-    const userId = getIdFromAccessToken(accessToken)
+    const userId = req.user['sub']
     this.authService.logout(userId)
     return { msg: 'Logout succesfull' }
   }
@@ -39,7 +37,7 @@ export class AuthController {
   @Get('refresh')
   async refreshTokens(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const refreshToken = req.cookies['auth-cookie'].refreshToken
-    const userId = getIdFromAccessToken(refreshToken)
+    const userId = req.user['sub']
     const tokens = await this.authService.refreshTokens(userId, refreshToken)
     res.cookie('auth-cookie', tokens, { httpOnly: true })
     return { accessToken: tokens.accessToken, msg: 'Refresh tokens succesfull' }

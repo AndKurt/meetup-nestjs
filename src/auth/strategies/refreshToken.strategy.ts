@@ -38,7 +38,7 @@ export class RefresTokenStrategy extends PassportStrategy(Strategy, 'jwt-refresh
     }
 
     const userId = payload.sub
-    const user = await this.userService.findByIdForValidateToken(userId)
+    const user = await this.userService.findById(userId)
 
     const isValidRefreshToken = await this.authService.isValidData(user.refreshToken, data.refreshToken)
 

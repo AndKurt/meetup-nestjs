@@ -1,59 +1,59 @@
-import { Model } from 'mongoose'
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
-import { InjectModel } from '@nestjs/mongoose'
+import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common'
+import { Op } from 'sequelize'
+import { MEETUP_REPOSITORY } from 'src/constants'
 
-import { Meetup, MeetupDocument } from './schemas/meetup.schema'
 import { CreateMeetupDto, UpdateMeetupDto } from './dto'
+import { Meetup } from './schemas/meetup-postgresql.schema'
 
 @Injectable()
 export class MeetupService {
-  constructor(@InjectModel(Meetup.name) private meetupModel: Model<MeetupDocument>) {}
+  constructor(@Inject(MEETUP_REPOSITORY) private readonly meetupModel: typeof Meetup) {}
 
-  getAll(options) {
-    return this.meetupModel.find(options)
+  async getAll() {
+    return await this.meetupModel.findAll()
   }
 
-  count(options) {
-    return this.meetupModel.count(options).exec()
+  async getAllwithQuery(title: string, tag: string, sort: string, offset: number, countPerPage: number) {
+    return await this.meetupModel.findAndCountAll({
+      where: {
+        title: { [Op.substring]: title || '' },
+        tags: { [Op.contains]: tag ? [tag] : [] },
+      },
+      order: [['date', sort ? sort.toLocaleUpperCase() : 'NULLS FIRST']],
+      offset: offset,
+      limit: countPerPage,
+    })
   }
 
-  async getById(id: string): Promise<MeetupDocument> {
-    try {
-      if (id.match(/^[0-9a-fA-F]{24}$/)) {
-        return this.meetupModel.findById(id)
-      } else {
-        throw new BadRequestException()
-      }
-    } catch (error) {
-      throw new NotFoundException()
-    }
+  async findById(id: string): Promise<Meetup> {
+    return await this.meetupModel.findOne<Meetup>({ where: { id } })
   }
 
   async create(meetupDto: CreateMeetupDto): Promise<Meetup> {
-    const newMeetup = new this.meetupModel(meetupDto)
+    const newMeetup = await this.meetupModel.create<Meetup>(meetupDto)
     return newMeetup.save()
   }
 
-  async remove(id: string): Promise<MeetupDocument> {
-    try {
-      if (id.match(/^[0-9a-fA-F]{24}$/)) {
-        const meetup = this.meetupModel.findByIdAndRemove(id)
-        return meetup
-      } else {
-        throw new BadRequestException()
-      }
-    } catch (error) {
-      throw new NotFoundException()
-    }
-  }
+  async remove(id: string): Promise<Meetup> {
+    const meetup = await this.findById(id)
 
-  async update(id: string, meetupDto: UpdateMeetupDto): Promise<Meetup> {
-    await this.meetupModel.findByIdAndUpdate(id, meetupDto)
-    const meetup = await this.meetupModel.findById(id)
+    if (!meetup) {
+      throw new ConflictException(`Account with ID: ${id} doesn't exist!`)
+    }
+    await this.meetupModel.destroy({ where: { id } })
     return meetup
   }
 
-  async removeAll(): Promise<any> {
-    return this.meetupModel.deleteMany()
+  async update(id: string, meetupDto: UpdateMeetupDto): Promise<Meetup> {
+    await this.meetupModel.update(meetupDto, { where: { id: id } })
+    const meetup = await this.findById(id)
+    return meetup
+  }
+
+  async removeAll() {
+    return this.meetupModel.destroy({
+      where: {},
+      truncate: true,
+    })
   }
 }

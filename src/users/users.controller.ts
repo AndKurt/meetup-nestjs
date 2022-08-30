@@ -9,12 +9,13 @@ import {
   Req,
   ForbiddenException,
   BadRequestException,
+  Post,
 } from '@nestjs/common'
 import { Request } from 'express'
-import { Action, CaslAbilityFactory } from 'src/ability/ability.factory'
 
+import { Action, CaslAbilityFactory } from 'src/ability/ability.factory'
 import { AccessTokenGuard } from 'src/auth/guards'
-import { UpdateUserDto } from './dto'
+import { CreateUserDto, UpdateUserDto } from './dto'
 import { IUserDetails } from './interface/user-details.interface'
 import { UserService } from './users.service'
 
@@ -25,13 +26,20 @@ export class UserController {
   @Get()
   async getAllUsers(): Promise<IUserDetails[]> {
     const users = await this.userService.getAllUsers()
-    return users.map((user) => ({ id: user._id, name: user.name, email: user.email, role: user.role }))
+    return users.map((user) => ({ id: user.id, name: user.name, email: user.email, role: user.role }))
   }
 
   @Get(':id')
   async getUser(@Param('id') id: string): Promise<IUserDetails> {
     const user = await this.userService.findById(id)
-    return { id: user._id, name: user.name, email: user.email, role: user.role }
+    return { id: user.id, name: user.name, email: user.email, role: user.role }
+  }
+
+  @Post('register')
+  async register(@Body() createUserDto: CreateUserDto) {
+    console.log(createUserDto)
+
+    return await this.userService.create(createUserDto)
   }
 
   @Patch(':id')
@@ -51,13 +59,11 @@ export class UserController {
     }
 
     const user = await this.userService.update(id, updateUserDto)
-    return { id: user._id, name: user.name, email: user.email, role: user.role }
+    return { id: user.id, name: user.name, email: user.email, role: user.role }
   }
 
   @Delete(':id')
   @UseGuards(AccessTokenGuard)
-  //@UseGuards(AccessTokenGuard, PoliciesGuard)
-  //@CheckPolicies({ action: Action.Delete, subject: User })
   async remove(@Param('id') id: string, @Req() req: Request) {
     const activeUser = req.user
     const ability = this.caslAbilityFactory.createForUser(activeUser)

@@ -19,66 +19,50 @@ import {
 } from '@nestjs/common'
 import { Request, Response } from 'express'
 import { Action, CaslAbilityFactory } from 'src/ability/ability.factory'
-import { AccessTokenGuard, RolesGuard } from 'src/auth/guards'
+import { AccessTokenGuard } from 'src/auth/guards'
 
 import { CreateMeetupDto, QueryParamsMeetup, UpdateMeetupDto } from './dto'
 import { MeetupService } from './meetup.service'
-import { Meetup } from './schemas/meetup.schema'
+import { Meetup } from './schemas/meetup-postgresql.schema'
 
 @Controller('meetup')
 export class MeetupController {
   constructor(private readonly meetupService: MeetupService, private readonly caslAbilityFactory: CaslAbilityFactory) {}
 
   @Get()
-  async getMeetups(@Res() res: Response, @Query() queryParams: QueryParamsMeetup) {
-    let options = {}
-
-    if (queryParams.title) {
-      options = {
-        $or: [{ title: new RegExp(queryParams.title.toString(), 'i') }],
-      }
-    }
-    if (queryParams.tag) {
-      options = {
-        $or: [{ tags: new RegExp(queryParams.tag.toString(), 'i') }],
-      }
-    }
-
-    const meetups = await this.meetupService.getAll(options).exec()
+  async getMeetups(@Query() queryParams: QueryParamsMeetup) {
+    const meetups = await this.meetupService.getAll()
     const countOfMeetups = meetups.length
 
-    if (!countOfMeetups && Object.keys(options).length) {
+    const startPage = queryParams.page ? parseInt(queryParams.page as any) - 1 : 0
+    const countPerPage = queryParams.countPerPage ? parseInt(queryParams.countPerPage as any) : countOfMeetups
+    const offset = countPerPage * startPage
+
+    const { count, rows } = await this.meetupService.getAllwithQuery(
+      queryParams.title,
+      queryParams.tag,
+      queryParams.sort,
+      offset,
+      countPerPage,
+    )
+
+    if (countOfMeetups && !count && Object.keys(queryParams).length) {
       throw new BadRequestException('No meetups found. Check query parameters')
     }
 
-    const page: number = parseInt(queryParams.page as any) || 1
-    const countPerPage = parseInt(queryParams.countPerPage as any) || countOfMeetups
-    const total = await this.meetupService.count(options)
-
-    const query = this.meetupService.getAll(options)
-
-    if (queryParams.sort) {
-      if (queryParams.sort === 'asc' || queryParams.sort === 'desc') {
-        query.sort({
-          date: queryParams.sort,
-        })
-      } else {
-        throw new BadRequestException('Check the querry value for sort')
-      }
+    return {
+      total: count,
+      countPerPage,
+      startPage: startPage + 1,
+      lastPage: Math.ceil(count / countPerPage),
+      result: rows,
     }
-
-    const result = await query
-      .skip((page - 1) * countPerPage)
-      .limit(countPerPage)
-      .exec()
-
-    return res.json({ result, total, countPerPage, page, lastPage: Math.ceil(total / countPerPage) })
   }
 
   @Get(':id')
   async getById(@Res() res: Response, @Param('id') id: string) {
     try {
-      const meetup = await this.meetupService.getById(id)
+      const meetup = await this.meetupService.findById(id)
       if (!meetup) {
         throw new BadRequestException('Meetup does not exist')
       }
@@ -101,7 +85,7 @@ export class MeetupController {
   async update(@Req() req: Request, @Body() updateMeetupDto: UpdateMeetupDto, @Param('id') id: string) {
     const activeUser = req.user
     const ability = this.caslAbilityFactory.createForUser(activeUser)
-    const meetupForUpdate = await this.meetupService.getById(id)
+    const meetupForUpdate = await this.meetupService.findById(id)
     const canUpdate = ability.can(Action.Update, meetupForUpdate)
 
     if (!meetupForUpdate) {
@@ -120,7 +104,7 @@ export class MeetupController {
   async remove(@Param('id') id: string, @Req() req: Request) {
     const activeUser = req.user
     const ability = this.caslAbilityFactory.createForUser(activeUser)
-    const meetupForDelete = await this.meetupService.getById(id)
+    const meetupForDelete = await this.meetupService.findById(id)
     const canDelete = ability.can(Action.Delete, meetupForDelete)
 
     if (!meetupForDelete) {

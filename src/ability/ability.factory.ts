@@ -1,9 +1,9 @@
 import { Ability, AbilityBuilder, AbilityClass, ExtractSubjectType, InferSubjects } from '@casl/ability'
+import { Model } from 'sequelize-typescript'
 import { Injectable } from '@nestjs/common'
-import { InjectModel } from '@nestjs/mongoose'
-import { Model } from 'mongoose'
-import { Meetup, MeetupDocument } from 'src/meetup/schemas/meetup.schema'
-import { User, UserDocument } from 'src/users/schemas/users.schema'
+import { User } from 'src/users/schemas/users.schema-postgresql'
+import { InjectModel } from '@nestjs/sequelize'
+import { Meetup } from 'src/meetup/schemas/meetup-postgresql.schema'
 
 export enum Action {
   Manage = 'manage',
@@ -26,8 +26,8 @@ export type AppAbility = Ability<[Action, Subjects]>
 @Injectable()
 export class CaslAbilityFactory {
   constructor(
-    @InjectModel(User.name) private userModel: Model<UserDocument>,
-    @InjectModel(Meetup.name) private meetupModel: Model<MeetupDocument>,
+    @InjectModel(User) private userModel: typeof User,
+    @InjectModel(Meetup) private meetupModel: typeof Meetup,
   ) {}
   createForUser(user: any) {
     const { can, build } = new AbilityBuilder<Ability<[Action, Subjects]>>(Ability as AbilityClass<AppAbility>)
@@ -37,8 +37,8 @@ export class CaslAbilityFactory {
     }
     if (user.role === Role.USER) {
       can(Action.Read, 'all')
-      can(Action.Update, this.userModel, { _id: { $eq: user['sub'] } })
-      can(Action.Delete, this.userModel, { _id: { $eq: user['sub'] } })
+      can(Action.Update, this.userModel, { id: { $eq: user['sub'] } })
+      can(Action.Delete, this.userModel, { id: { $eq: user['sub'] } })
 
       can(Action.Update, this.meetupModel, { ownerId: { $eq: user['sub'] } })
       can(Action.Delete, this.meetupModel, { ownerId: { $eq: user['sub'] } })

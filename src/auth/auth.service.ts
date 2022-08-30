@@ -15,7 +15,7 @@ export class AuthService {
     return argon2.hash(data)
   }
 
-  async isValidData(hashedData, data) {
+  async isValidData(hashedData: string, data: string) {
     return await argon2.verify(hashedData, data)
   }
 
@@ -25,7 +25,7 @@ export class AuthService {
       ...createUserDto,
       password: hash,
     })
-    const tokens = await this.getTokens(newUser._id, newUser.name, newUser.role)
+    const tokens = await this.getTokens(newUser.id, newUser.name, newUser.role)
     await this.updateRefreshToken(newUser.id, tokens.refreshToken)
     return tokens
   }
@@ -37,8 +37,8 @@ export class AuthService {
     const isPasswordMatch = await this.isValidData(user.password, data.password)
     if (!isPasswordMatch) throw new BadRequestException('Password is incorrect')
 
-    const tokens = await this.getTokens(user._id, user.name, user.role)
-    await this.updateRefreshToken(user._id, tokens.refreshToken)
+    const tokens = await this.getTokens(user.id, user.name, user.role)
+    await this.updateRefreshToken(user.id, tokens.refreshToken)
     return tokens
   }
 
@@ -48,6 +48,8 @@ export class AuthService {
 
   async updateRefreshToken(userId: string, refreshToken: string) {
     const hashedRefreshToken = await this.hashData(refreshToken)
+    console.log(hashedRefreshToken, userId)
+
     await this.userService.update(userId, {
       refreshToken: hashedRefreshToken,
     })

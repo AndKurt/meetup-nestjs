@@ -1,15 +1,16 @@
 import { Module } from '@nestjs/common'
-import { MongooseModule } from '@nestjs/mongoose'
+import { SequelizeModule } from '@nestjs/sequelize'
 import { CaslModule } from 'src/ability/ability.module'
-import { RolesGuard } from 'src/auth/guards'
 
 import { MeetupController } from './meetup.controller'
 import { MeetupService } from './meetup.service'
-import { Meetup, MeetupSchema } from './schemas/meetup.schema'
+import { meetupProviders } from './providers/meetup.providers'
+import { Meetup } from './schemas/meetup-postgresql.schema'
 
 @Module({
-  imports: [MongooseModule.forFeature([{ name: Meetup.name, schema: MeetupSchema }]), CaslModule],
-  providers: [MeetupService, RolesGuard],
+  imports: [CaslModule, SequelizeModule.forFeature([Meetup])],
   controllers: [MeetupController],
+  providers: [MeetupService, ...meetupProviders],
+  exports: [MeetupService],
 })
 export class MeetupModule {}
