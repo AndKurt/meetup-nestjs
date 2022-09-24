@@ -1,50 +1,43 @@
 import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common'
 import { PassportStrategy } from '@nestjs/passport'
-
-import { ExtractJwt, Strategy } from 'passport-jwt'
 import { Request } from 'express'
-import { UserService } from 'src/users/users.service'
-import { AuthService } from '../auth.service'
+import { ExtractJwt, Strategy } from 'passport-jwt'
+
+import { UserSession } from '~Users/interface'
+import UserService from '~Users/users.service'
+
+import AuthService from '../auth.service'
+import { extractToken } from '../utils'
 
 @Injectable()
-export class RefresTokenStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
+export default class RefreshTokenStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
   constructor(private readonly userService: UserService, private readonly authService: AuthService) {
     super({
-      //jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      jwtFromRequest: ExtractJwt.fromExtractors([
-        (request: Request) => {
-          let data = request?.cookies['auth-cookie']
-          if (!data) {
-            return null
-          }
-
-          return data.refreshToken
-        },
-      ]),
+      ignoreExpiration: false,
       secretOrKey: process.env.REFRESH_TOKEN_SECRET,
       passReqToCallback: true,
-      ignoreExpiration: false,
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        (req: Request) => {
+          const extract = extractToken('refreshToken')
+          const refreshToken = extract(req)
+
+          return refreshToken
+        },
+      ]),
     })
   }
 
-  async validate(req: Request, payload: any) {
-    if (!payload) {
-      throw new UnauthorizedException()
-    }
+  async validate(req: Request, payload: UserSession) {
+    const extract = extractToken('refreshToken')
+    const refreshToken = extract(req)
+    if (!refreshToken) throw new BadRequestException('Refresh token doesn"t exist')
 
-    const data = req?.cookies['auth-cookie']
-    if (!data.refreshToken) {
-      throw new BadRequestException('Refresh token doesn"t exist')
-    }
-
-    const userId = payload.sub
+    const userId = payload.id
     const user = await this.userService.findByIdForValidateToken(userId)
 
-    const isValidRefreshToken = await this.authService.isValidData(user.refreshToken, data.refreshToken)
+    const isValidRefreshToken = await AuthService.isValidData(user.refreshToken, refreshToken)
 
-    if (!isValidRefreshToken) {
-      throw new UnauthorizedException('Invalid Refresh token')
-    }
+    if (!isValidRefreshToken) throw new UnauthorizedException('Invalid Refresh token')
 
     return payload
   }

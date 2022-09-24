@@ -1,7 +1,8 @@
 import { IsEmail, IsNotEmpty, IsOptional, MaxLength, MinLength } from 'class-validator'
-import { Role } from 'src/auth/models/role.enum'
 
-export class CreateUserDto {
+import { Role } from '~Constants/ability'
+
+export default class CreateUserDto {
   @IsNotEmpty()
   @MinLength(2)
   @MaxLength(10)

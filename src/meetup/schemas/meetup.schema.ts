@@ -1,5 +1,5 @@
-import { Document, Schema as mongoShema } from 'mongoose'
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
+import { Document, Schema as mongoShema } from 'mongoose'
 
 export type MeetupDocument = Meetup & Document
 

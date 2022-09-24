@@ -1,24 +1,25 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common'
+import { ConflictException, Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-
 import * as bcrypt from 'bcrypt'
-
 import { Model } from 'mongoose'
-import { CreateUserDto, UpdateUserDto } from './dto'
 
+import { Role } from '~Constants/ability'
+
+import { CreateUserDto, UpdateUserDto } from './dto'
 import { User, UserDocument } from './schemas/users.schema'
 
 @Injectable()
-export class UserService {
+export default class UserService {
   constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
-  async hashPassword(password: string): Promise<string> {
+  static async hashPassword(password: string): Promise<string> {
     return bcrypt.hash(password, 10)
   }
 
   async getAllUsers(): Promise<UserDocument[] | []> {
     const users = await this.userModel.find()
     if (!users.length) return []
+
     return users
   }
 
@@ -31,20 +32,11 @@ export class UserService {
   }
 
   async findById(id: string): Promise<UserDocument> {
-    try {
-      if (id.match(/^[0-9a-fA-F]{24}$/)) {
-        return this.userModel.findById(id)
-      } else {
-        throw new BadRequestException()
-      }
-    } catch (error) {
-      throw new NotFoundException()
-    }
+    return this.userModel.findById(id)
   }
 
   async findByIdForValidateToken(id: string): Promise<UserDocument> {
-    const user = await this.userModel.findById(id).exec()
-    return user
+    return this.userModel.findById(id).exec()
   }
 
   async create(data: CreateUserDto): Promise<UserDocument> {
@@ -60,7 +52,9 @@ export class UserService {
       throw new ConflictException(`Account with email: ${userWithSameEmail.email} already exists!`)
     }
 
+    // eslint-disable-next-line new-cap
     const newUser = new this.userModel({ name, email, password, role })
+
     return newUser.save()
   }
 
@@ -70,6 +64,7 @@ export class UserService {
       throw new ConflictException(`Account with ID: ${id} doesn't exist!`)
     }
     await this.userModel.findByIdAndDelete(id)
+
     return user
   }
 
@@ -78,7 +73,6 @@ export class UserService {
   }
 
   async removeAll() {
-    // Delete all users except users with role admin
-    return this.userModel.deleteMany({ role: { $ne: 'admin' } })
+    return this.userModel.deleteMany({ role: { $ne: Role.ADMIN } })
   }
 }

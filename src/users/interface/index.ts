@@ -4,3 +4,5 @@ export interface IUserDetails {
   email: string
   role: string
 }
+
+export type UserSession = Omit<IUserDetails, 'email'>

@@ -1,15 +1,16 @@
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
-import { Meetup, MeetupSchema } from 'src/meetup/schemas/meetup.schema'
-import { User, UserSchema } from 'src/users/schemas/users.schema'
-import { CaslAbilityFactory } from './ability.factory'
+
+import PermissionAbilityFactory from '~Ability/ability.factory'
+import { Meetup, MeetupSchema } from '~Meetup/schemas/meetup.schema'
+import { User, UserSchema } from '~Users/schemas/users.schema'
 
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
     MongooseModule.forFeature([{ name: Meetup.name, schema: MeetupSchema }]),
   ],
-  providers: [CaslAbilityFactory],
-  exports: [CaslAbilityFactory],
+  providers: [PermissionAbilityFactory],
+  exports: [PermissionAbilityFactory],
 })
-export class CaslModule {}
+export default class PermissionAbilityModule {}

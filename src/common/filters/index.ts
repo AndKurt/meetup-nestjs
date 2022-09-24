@@ -1,10 +1,9 @@
 import { ExceptionFilter, Catch, ArgumentsHost, HttpException, Logger } from '@nestjs/common'
 import { Request, Response } from 'express'
 
-//http-exception.filter.ts
-
 @Catch(HttpException)
-export class HttpExceptionFilter implements ExceptionFilter {
+export default class HttpExceptionFilter implements ExceptionFilter {
+  // eslint-disable-next-line class-methods-use-this
   catch(exception: HttpException, host: ArgumentsHost) {
     const ctx = host.switchToHttp()
     const response = ctx.getResponse<Response>()

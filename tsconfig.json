@@ -16,6 +16,16 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
-    "noFallthroughCasesInSwitch": false
+    "noFallthroughCasesInSwitch": false,
+    "paths": {
+      "~/*": ["src/*"],
+      "~Ability/*": ["src/ability/*"],
+      "~Auth/*": ["src/auth/*"],
+      "~Constants/*": ["src/constants/*"],
+      "~Common/*": ["src/common/*"],
+      "~Interfaces/*": ["src/interfaces/*"],
+      "~Meetup/*": ["src/meetup/*"],
+      "~Users/*": ["src/users/*"]
+    }
   }
 }

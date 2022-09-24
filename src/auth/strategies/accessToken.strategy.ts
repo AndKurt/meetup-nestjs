@@ -1,31 +1,33 @@
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common'
+import { Injectable, UnauthorizedException } from '@nestjs/common'
 import { PassportStrategy } from '@nestjs/passport'
 import { Request } from 'express'
-
 import { ExtractJwt, Strategy } from 'passport-jwt'
 
+import { UserSession } from '~Users/interface'
+
+import { extractToken } from '../utils'
+
 @Injectable()
-export class AccessTokenStrategy extends PassportStrategy(Strategy, 'jwt') {
+export default class AccessTokenStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor() {
     super({
       ignoreExpiration: false,
       secretOrKey: process.env.ACCESS_TOKEN_SECRET,
       jwtFromRequest: ExtractJwt.fromExtractors([
         (req: Request) => {
-          const data = req?.cookies['auth-cookie']
-          if (!data) {
-            return null
-          }
-          return data.accessToken
+          const extract = extractToken('accessToken')
+          const accessToken = extract(req)
+
+          return accessToken
         },
       ]),
     })
   }
 
-  async validate(payload: any) {
-    if (payload === null) {
-      throw new UnauthorizedException()
-    }
+  // eslint-disable-next-line class-methods-use-this
+  async validate(payload: UserSession) {
+    if (!payload) throw new UnauthorizedException()
+
     return payload
   }
 }

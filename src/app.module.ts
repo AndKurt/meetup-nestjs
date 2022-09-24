@@ -2,12 +2,12 @@ import { Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { MongooseModule } from '@nestjs/mongoose'
 
-import { AppController } from './app.controller'
-import { AppService } from './app.service'
-import { MeetupModule } from './meetup/meetup.module'
-import { AuthModule } from './auth/auth.module'
-import { UserModule } from './users/users.module'
-import { CaslModule } from './ability/ability.module'
+import AppController from '~/app.controller'
+import AppService from '~/app.service'
+import PermissionAbilityModule from '~Ability/ability.module'
+import AuthModule from '~Auth/auth.module'
+import MeetupModule from '~Meetup/meetup.module'
+import UserModule from '~Users/users.module'
 
 @Module({
   imports: [
@@ -16,9 +16,9 @@ import { CaslModule } from './ability/ability.module'
     MeetupModule,
     UserModule,
     AuthModule,
-    CaslModule,
+    PermissionAbilityModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export default class AppModule {}

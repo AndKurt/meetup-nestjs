@@ -10,27 +10,32 @@ import {
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common'
-import { Request } from 'express'
-import { Action, CaslAbilityFactory } from 'src/ability/ability.factory'
 
-import { AccessTokenGuard } from 'src/auth/guards'
-import { UpdateUserDto } from './dto'
-import { IUserDetails } from './interface/user-details.interface'
-import { UserService } from './users.service'
+import { IExtendedRequest } from '~/interfaces/extendedRequest'
+import PermissionAbilityFactory from '~Ability/ability.factory'
+import { AccessTokenGuard } from '~Auth/guards'
+import { AbilityAction, Role } from '~Constants/ability'
+import ErrorMsg from '~Constants/errorMsg'
+
+import UpdateUserDto from './dto/update-user.dto'
+import { IUserDetails } from './interface'
+import UserService from './users.service'
 
 @Controller('user')
-export class UserController {
-  constructor(private userService: UserService, private readonly caslAbilityFactory: CaslAbilityFactory) {}
+export default class UserController {
+  constructor(private userService: UserService, private readonly permissionAbilityFactory: PermissionAbilityFactory) {}
 
   @Get()
   async getAllUsers(): Promise<IUserDetails[]> {
     const users = await this.userService.getAllUsers()
+
     return users.map((user) => ({ id: user._id, name: user.name, email: user.email, role: user.role }))
   }
 
   @Get(':id')
   async getUser(@Param('id') id: string): Promise<IUserDetails> {
     const user = await this.userService.findById(id)
+
     return { id: user._id, name: user.name, email: user.email, role: user.role }
   }
 
@@ -39,53 +44,55 @@ export class UserController {
   async update(
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
-    @Req() req: Request,
+    @Req() req: IExtendedRequest,
   ): Promise<IUserDetails> {
     const activeUser = req.user
-    const ability = this.caslAbilityFactory.createForUser(activeUser)
+    const ability = this.permissionAbilityFactory.createForUser(activeUser)
     const userForUpdate = await this.userService.findById(id)
-    const canUpdate = ability.can(Action.Update, userForUpdate)
+    const canUpdate = ability.can(AbilityAction.Update, userForUpdate)
 
     if (!canUpdate) {
-      throw new ForbiddenException('You can"t update, because you are not an admin')
+      throw new ForbiddenException(ErrorMsg.NOT_ADMIN)
     }
 
     const user = await this.userService.update(id, updateUserDto)
+
     return { id: user._id, name: user.name, email: user.email, role: user.role }
   }
 
   @Delete(':id')
   @UseGuards(AccessTokenGuard)
-  //@UseGuards(AccessTokenGuard, PoliciesGuard)
-  //@CheckPolicies({ action: Action.Delete, subject: User })
-  async remove(@Param('id') id: string, @Req() req: Request) {
+  async remove(@Param('id') id: string, @Req() req: IExtendedRequest) {
     const activeUser = req.user
-    const ability = this.caslAbilityFactory.createForUser(activeUser)
+    const ability = this.permissionAbilityFactory.createForUser(activeUser)
     const userForDelete = await this.userService.findById(id)
-    const canDeleteUser = ability.can(Action.Delete, userForDelete)
+    const canDeleteUser = ability.can(AbilityAction.Delete, userForDelete)
 
     if (!userForDelete) {
-      throw new BadRequestException('User does not exist')
+      throw new BadRequestException(`User ${ErrorMsg.DOES_NOT_EXIST}`)
     }
     if (!canDeleteUser) {
-      throw new ForbiddenException('You can"t delete, because you are not an admin')
+      throw new ForbiddenException(ErrorMsg.NOT_ADMIN)
     }
     await this.userService.remove(id)
-    return { msg: `User deleted` }
+
+    return { msg: 'User deleted' }
   }
 
   @Delete()
   @UseGuards(AccessTokenGuard)
-  async removeAll(@Req() req: Request) {
+  async removeAll(@Req() req: IExtendedRequest) {
     const activeUser = req.user
-    const ability = this.caslAbilityFactory.createForUser(activeUser)
-    const canDeleteUsers = ability.can(Action.Delete, 'all')
+
+    const ability = this.permissionAbilityFactory.createForUser(activeUser)
+    const canDeleteUsers = ability.can(AbilityAction.Delete, Role.ALL)
 
     if (!canDeleteUsers) {
-      throw new ForbiddenException('You can"t delete, because you are not an admin')
+      throw new ForbiddenException(ErrorMsg.NOT_ADMIN)
     }
 
     await this.userService.removeAll()
-    return { msg: `All user deleted` }
+
+    return { msg: 'All user deleted' }
   }
 }

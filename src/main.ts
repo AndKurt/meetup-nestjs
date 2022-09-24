@@ -1,9 +1,9 @@
-import { BadRequestException, ValidationError, ValidationPipe } from '@nestjs/common'
+import { BadRequestException, ValidationPipe } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
 import * as cookieParser from 'cookie-parser'
 
-import { AppModule } from './app.module'
-import { HttpExceptionFilter } from './common/filters'
+import AppModule from '~/app.module'
+import HttpExceptionFilter from '~Common/filters'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule)
@@ -22,6 +22,7 @@ async function bootstrap() {
             errorMessages[error.property] = Object.values(error.constraints).join('. ').trim()
           }
         })
+
         return new BadRequestException(errorMessages)
       },
     }),

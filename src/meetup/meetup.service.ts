@@ -1,12 +1,12 @@
-import { Model } from 'mongoose'
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
+import { Model } from 'mongoose'
 
-import { Meetup, MeetupDocument } from './schemas/meetup.schema'
 import { CreateMeetupDto, UpdateMeetupDto } from './dto'
+import { Meetup, MeetupDocument } from './schemas/meetup.schema'
 
 @Injectable()
-export class MeetupService {
+export default class MeetupService {
   constructor(@InjectModel(Meetup.name) private meetupModel: Model<MeetupDocument>) {}
 
   getAll(options) {
@@ -18,42 +18,25 @@ export class MeetupService {
   }
 
   async getById(id: string): Promise<MeetupDocument> {
-    try {
-      if (id.match(/^[0-9a-fA-F]{24}$/)) {
-        return this.meetupModel.findById(id)
-      } else {
-        throw new BadRequestException()
-      }
-    } catch (error) {
-      throw new NotFoundException()
-    }
+    return this.meetupModel.findById(id)
   }
 
   async create(meetupDto: CreateMeetupDto): Promise<Meetup> {
+    // eslint-disable-next-line new-cap
     const newMeetup = new this.meetupModel(meetupDto)
+
     return newMeetup.save()
   }
 
   async remove(id: string): Promise<MeetupDocument> {
-    try {
-      if (id.match(/^[0-9a-fA-F]{24}$/)) {
-        const meetup = this.meetupModel.findByIdAndRemove(id)
-        return meetup
-      } else {
-        throw new BadRequestException()
-      }
-    } catch (error) {
-      throw new NotFoundException()
-    }
+    return this.meetupModel.findByIdAndRemove(id)
   }
 
   async update(id: string, meetupDto: UpdateMeetupDto): Promise<Meetup> {
-    await this.meetupModel.findByIdAndUpdate(id, meetupDto)
-    const meetup = await this.meetupModel.findById(id)
-    return meetup
+    return this.meetupModel.findByIdAndUpdate(id, meetupDto, { new: true })
   }
 
-  async removeAll(): Promise<any> {
+  async removeAll(): Promise<{ deletedCount: number }> {
     return this.meetupModel.deleteMany()
   }
 }

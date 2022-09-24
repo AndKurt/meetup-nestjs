@@ -1,6 +1,6 @@
 import { ArrayMinSize, IsArray, IsDateString, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator'
 
-export class CreateMeetupDto {
+export default class CreateMeetupDto {
   @IsString()
   @MaxLength(30)
   @IsNotEmpty()

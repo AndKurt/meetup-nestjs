@@ -5,5 +5,15 @@
   "testRegex": ".e2e-spec.ts$",
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "moduleNameMapper": {
+    "^~/(.*)$": "<rootDir>/../src/$1",
+    "^~Ability/(.*)$": "<rootDir>/../src/ability/$1",
+    "^~Auth/(.*)$": "<rootDir>/../src/auth/$1",
+    "^~Constants/(.*)$": "<rootDir>/../src/constants/$1",
+    "^~Common/(.*)$": "<rootDir>/../src/common/$1",
+    "^~Interfaces/(.*)$": "<rootDir>/../src/cnterfaces/$1",
+    "^~Meetup/(.*)$": "<rootDir>/../src/meetup/$1",
+    "^~Users/(.*)$": "<rootDir>/../src/users/$1"
   }
 }

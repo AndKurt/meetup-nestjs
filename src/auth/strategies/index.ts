@@ -1,2 +1,2 @@
-export * from './accessToken.strategy'
-export * from './refreshToken.strategy'
+export { default as AccessTokenStrategy } from './accessToken.strategy'
+export { default as RefreshTokenStrategy } from './refreshToken.strategy'

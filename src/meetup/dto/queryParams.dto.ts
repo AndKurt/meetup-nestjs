@@ -1,6 +1,6 @@
 import { IsNumberString, IsOptional, IsString } from 'class-validator'
 
-export class QueryParamsMeetup {
+export default class QueryParamsMeetup {
   @IsString()
   @IsOptional()
   readonly title: string
@@ -11,11 +11,11 @@ export class QueryParamsMeetup {
 
   @IsNumberString()
   @IsOptional()
-  readonly page: number
+  readonly page: string
 
   @IsNumberString()
   @IsOptional()
-  readonly countPerPage: number
+  readonly countPerPage: string
 
   @IsString()
   @IsOptional()
