@@ -52,6 +52,7 @@ export default class UsersController {
     const activeUser = req.user
     const ability = this.permissionAbilityFactory.createForUser(activeUser)
     const userForUpdate = await this.usersService.findById(id)
+
     const canUpdate = ability.can(AbilityAction.Update, userForUpdate)
 
     if (!canUpdate) {
