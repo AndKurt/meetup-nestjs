@@ -45,7 +45,7 @@ module.exports = {
     ],
     semi: ['error', 'never'],
     quotes: ['error', 'single', { avoidEscape: true }],
-    'max-len': ['error', { code: 150, comments: 200 }],
+    'max-len': ['error', { code: 150, comments: 200, ignoreStrings: true }],
     'comma-dangle': ['error', 'always-multiline'],
     '@typescript-eslint/no-namespace': 'off',
     '@typescript-eslint/member-ordering': [

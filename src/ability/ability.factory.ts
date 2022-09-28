@@ -2,12 +2,12 @@ import { Ability, AbilityBuilder, AbilityClass, ExtractSubjectType } from '@casl
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { Model } from 'mongoose'
-import { Meetup, MeetupDocument } from 'src/meetup/schemas/meetup.schema'
-import { User, UserDocument } from 'src/users/schemas/users.schema'
 
 import { AppAbility, Subjects } from '~Ability/interface'
 import { Role, AbilityAction } from '~Constants/ability'
+import { Meetup, MeetupDocument } from '~Meetup/schemas/meetup.schema'
 import { UserSession } from '~Users/interface'
+import { User, UserDocument } from '~Users/schemas/users.schema'
 
 @Injectable()
 export default class PermissionAbilityFactory {

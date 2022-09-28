@@ -9,7 +9,7 @@ import { CreateUserDto, UpdateUserDto } from './dto'
 import { User, UserDocument } from './schemas/users.schema'
 
 @Injectable()
-export default class UserService {
+export default class UsersService {
   constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
   static async hashPassword(password: string): Promise<string> {
